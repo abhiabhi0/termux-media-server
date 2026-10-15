@@ -1,0 +1,142 @@
+TERMUX MEDIA SERVER - QUICK COMMANDS
+=====================================
+
+This is a plain-text reference. View it in Termux with:
+  cat ~/notes/QUICK_COMMANDS.txt
+Or edit/view it with:
+  nano ~/notes/QUICK_COMMANDS.txt
+
+
+1. START SERVICES
+-----------------
+
+Preferred command (starts SSH, Jellyfin, and File Browser if not already running):
+  bash ~/bin/start-media.sh
+
+Start SSH manually:
+  sshd
+
+Start Jellyfin manually (only if the startup script did not start it):
+  export DOTNET_ROOT="$PREFIX/lib/dotnet"
+  export DOTNET_ROOT_ARM64="$PREFIX/lib/dotnet"
+  nohup jellyfin >> ~/.local/share/media-server-logs/jellyfin.log 2>&1 < /dev/null &
+
+Start File Browser manually (only if the startup script did not start it):
+  nohup filebrowser --address 0.0.0.0 --port 8080 --root "$HOME/storage/shared" -d "$HOME/.config/filebrowser/filebrowser.db" >> ~/.local/share/media-server-logs/filebrowser.log 2>&1 < /dev/null &
+
+Keep File Browser authentication enabled. Use Tailscale for remote access; do not expose File Browser directly to the public internet.
+
+
+2. CHECK IF SERVICES ARE RUNNING
+--------------------------------
+
+  pgrep -af sshd
+  pgrep -af jellyfin
+  pgrep -af filebrowser
+  pgrep -af aria2c
+
+If a command prints a matching process line, the process is running. If it prints nothing, it may not be running.
+
+Check Jellyfin and File Browser locally:
+  curl -I http://127.0.0.1:8096
+  curl -I http://127.0.0.1:8080
+
+Jellyfin may return "302 Found" and redirect to /web/; that is normal.
+
+
+3. DOWNLOAD WITH ARIA2C
+-----------------------
+
+All examples save to:
+  ~/storage/shared/Download
+
+Direct HTTP/HTTPS URL:
+  aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL"
+
+Replace DIRECT_DOWNLOAD_URL with a direct file URL.
+  -c resumes supported interrupted downloads.
+  -x 8 allows up to 8 connections per server.
+  -s 8 splits the download into up to 8 segments.
+Some websites require login/cookies; a webpage URL may not be a direct file URL.
+
+
+Magnet link:
+  aria2c --seed-time=0 -d ~/storage/shared/Download "MAGNET_LINK"
+
+Replace MAGNET_LINK with the complete magnet link. BitTorrent speed depends on available peers and network conditions.
+
+
+Existing .torrent file:
+  aria2c --seed-time=0 -d ~/storage/shared/Download ~/storage/shared/Download/file.torrent
+
+Replace file.torrent with the actual filename.
+
+
+Download a .torrent file from a URL:
+  aria2c --seed-time=0 -d ~/storage/shared/Download "TORRENT_FILE_URL"
+
+This downloads the .torrent file itself. Run aria2c again using that downloaded .torrent file to download its contents.
+
+
+4. RUN A DOWNLOAD IN THE BACKGROUND
+-----------------------------------
+
+Direct URL:
+  nohup aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL" > ~/aria2-download.log 2>&1 < /dev/null &
+
+Magnet link:
+  nohup aria2c --seed-time=0 -d ~/storage/shared/Download "MAGNET_LINK" > ~/aria2-download.log 2>&1 < /dev/null &
+
+Monitor the log:
+  tail -f ~/aria2-download.log
+
+Press Ctrl+C to stop viewing the log; this normally does not stop the background download.
+
+Check aria2:
+  pgrep -af aria2c
+
+List downloaded files:
+  ls -lh ~/storage/shared/Download
+
+
+5. ACCESS SERVICES OVER TAILSCALE
+----------------------------------
+
+Replace PHONE_TAILSCALE_IP_OR_NAME with this phone's current Tailscale IP or MagicDNS name.
+
+Jellyfin:
+  http://PHONE_TAILSCALE_IP_OR_NAME:8096
+
+File Browser:
+  http://PHONE_TAILSCALE_IP_OR_NAME:8080
+
+SSH from Windows PowerShell:
+  ssh -p 8022 YOUR_TERMUX_USERNAME@PHONE_TAILSCALE_IP_OR_NAME
+
+Find the Termux username:
+  whoami
+
+
+6. LOGS AND STORAGE
+-------------------
+
+Jellyfin log:
+  tail -f ~/.local/share/media-server-logs/jellyfin.log
+
+File Browser log:
+  tail -f ~/.local/share/media-server-logs/filebrowser.log
+
+aria2 log:
+  tail -f ~/aria2-download.log
+
+Check available storage:
+  df -h
+
+
+NOTES
+-----
+
+- Android may stop background services/downloads to save battery. Set Termux battery usage to Unrestricted where available.
+- The startup script uses termux-wake-lock if available, but Android can still terminate processes.
+- Preferred service startup command: bash ~/bin/start-media.sh
+- Only download or share content you have permission to access.
