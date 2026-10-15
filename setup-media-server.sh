@@ -16,6 +16,8 @@ say() { printf '\n==> %s\n' "$*"; }
 warn() { printf '\nWARNING: %s\n' "$*" >&2; }
 die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 ARCH="$(uname -m)"
 case "$ARCH" in
   aarch64|arm64) FB_ARCH="arm64" ;;
@@ -36,6 +38,14 @@ pkg install -y openssh curl wget jq tar gzip aria2 python
 say "Requesting Android shared-storage permission"
 termux-setup-storage || true
 mkdir -p "$HOME/bin" "$FB_DIR" "$LOG_DIR"
+
+say "Installing the simple aria2 download command (dl)"
+if [[ -f "$SCRIPT_DIR/download.sh" ]]; then
+  install -m 755 "$SCRIPT_DIR/download.sh" "$PREFIX/bin/dl"
+else
+  curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/download.sh -o "$PREFIX/bin/dl"
+  chmod 755 "$PREFIX/bin/dl"
+fi
 
 say "Installing Jellyfin"
 if ! pkg install -y jellyfin-server jellyfin-ffmpeg; then
@@ -137,7 +147,13 @@ Jellyfin:              http://127.0.0.1:8096
 File Browser:          http://127.0.0.1:8080
 SSH port:              8022
 aria2:                 $(command -v aria2c || echo unavailable)
+Download shortcut:     $(command -v dl || echo "$PREFIX/bin/dl")
 Logs:                  $LOG_DIR
+
+Download usage:
+- Run: dl
+- Paste a direct URL, magnet link, local .torrent path, or remote .torrent URL.
+- Downloads go to: $HOME/storage/shared/Download
 
 Next:
 - Install Tailscale separately on Android and Windows; sign in to the same tailnet.
