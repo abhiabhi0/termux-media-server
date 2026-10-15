@@ -38,7 +38,7 @@ elif [[ $# -eq 1 ]]; then
   INPUT="$1"
 else
   printf 'Paste a direct URL, magnet link, or local .torrent path: '
-  IFS= read -r INPUT || true
+  IFS= read -r INPUT || INPUT=""
 fi
 
 INPUT="${INPUT#"${INPUT%%[![:space:]]*}"}"
@@ -51,7 +51,7 @@ fi
 
 # Expand a leading ~/ when a local torrent path is entered at the prompt.
 if [[ "$INPUT" == "~/"* ]]; then
-  INPUT="$HOME/${INPUT#~/}"
+  INPUT="$HOME/${INPUT#\~/}"
 fi
 
 mkdir -p "$DOWNLOAD_DIR"
