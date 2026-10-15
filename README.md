@@ -1,32 +1,38 @@
-# Android + Windows Personal Media Server (Termux)
+# Termux Media Server
 
-A reusable setup for turning a compatible Android phone into a private media/file server, managed from Windows. It uses Termux, Jellyfin, File Browser, OpenSSH, aria2, and optionally Tailscale.
+A personal media and file server for Android using Termux. Access your files, stream media with Jellyfin, manage files through a browser, and download files remotely from a Windows PC.
 
-> **Compatibility:** The setup script is intended for Termux on Android. Jellyfin packages are not available for every Android CPU architecture or Termux repository combination. The script detects architecture for File Browser, but stops if Jellyfin packages cannot be installed. Test on your phone before relying on it. It is not a universal one-click installer for every Android device.
+## Features
 
-## What the Android setup script does
+- **Jellyfin:** Stream your media through a web browser or compatible client.
+- **File Browser:** Browse, upload, download, and manage files through a web interface.
+- **SSH:** Remotely access the phone's Termux shell from Windows.
+- **aria2:** Download files using HTTP/HTTPS URLs, magnet links, and `.torrent` files.
+- **Tailscale:** Securely connect your phone and PC without exposing services directly to the public internet.
+- **Persistent configuration:** Preserve existing Jellyfin data and File Browser accounts when rerunning the setup script.
+- **Background services:** Start services when a Termux shell opens.
 
-- Updates Termux packages and installs `openssh`, `curl`, `wget`, `jq`, `tar`, `gzip`, `aria2`, and Python.
-- Requests access to Android shared storage (`termux-setup-storage`).
-- Installs `jellyfin-server` and `jellyfin-ffmpeg` from configured Termux repositories.
-- Downloads the matching File Browser release binary for supported CPU architectures.
-- Creates a password-protected File Browser admin account on first setup; preserves existing database/password on reruns.
-- Creates `~/bin/start-media.sh` to start SSH, Jellyfin, and File Browser when not already running.
-- Adds a duplicate-checked `.bashrc` hook so services start when a Termux shell opens.
-- Logs service output under `~/.local/share/media-server-logs/`.
-- Does not reset existing Jellyfin data, File Browser credentials, Android DNS, or Tailscale configuration.
+## Requirements
 
-## Files
+- An Android phone that supports Termux.
+- Termux installed from a trusted source, such as [F-Droid](https://f-droid.org/packages/com.termux/) or the official [Termux GitHub repository](https://github.com/termux/termux-app).
+- A Windows PC with [Tailscale](https://tailscale.com/download) installed.
+- An internet connection for installation and downloads.
+- Sufficient free storage for your media and downloads.
 
-- `setup-media-server.sh` — run in Termux on Android.
-- `windows-connect.ps1` — optional Windows helper to test ports and print SSH/browser URLs.
-- `README.md` — this guide.
+Jellyfin package availability and performance depend on your Android architecture, Android version, and configured Termux repositories.
 
-## Android setup
+## Installation
 
-1. Install Termux from a trusted source such as the official F-Droid listing or Termux GitHub releases. Avoid mixing Termux and add-on apps from different signing sources.
-2. Download `setup-media-server.sh` to your phone's Download folder, or clone/download this repository.
-3. Open Termux and run:
+### 1. Install Termux
+
+Install and open Termux on your Android phone.
+
+### 2. Run the setup script
+
+Download `setup-media-server.sh` from this repository and place it in your phone's Download folder.
+
+In Termux, run:
 
 ```bash
 termux-setup-storage
@@ -34,123 +40,263 @@ cd ~/storage/shared/Download
 bash setup-media-server.sh
 ```
 
-If you cloned the repository into Termux home, run:
+Alternatively, if you placed the script in your Termux home directory:
 
 ```bash
-bash ~/android-windows-media-server/setup-media-server.sh
+bash ~/setup-media-server.sh
 ```
 
-Grant the Android storage permission when prompted. The script asks for a File Browser admin password only if it is creating the database for the first time.
+The script installs the required packages, configures the available services, and requests shared-storage access.
 
-### Android-specific follow-up
+If File Browser is being configured for the first time, the script asks you to set an administrator password. Keep it private.
 
-- Open Jellyfin in a browser at `http://127.0.0.1:8096` and complete the first-run wizard if needed.
-- In Android settings, set Termux battery usage to **Unrestricted** / **Don't optimize** if available. Android may still stop background processes.
-- `termux-wake-lock` can help keep the CPU awake but does not override all OS restrictions.
-- The `.bashrc` hook starts services when a Termux shell opens. For startup immediately after a phone reboot, install and configure the compatible Termux:Boot add-on separately.
-- Keep File Browser authentication enabled. Do not expose ports directly to the public internet.
+**Note:** If Jellyfin cannot be installed from your configured Termux repositories, check package availability and repository compatibility for your device.
 
-## Windows setup
+## Configure remote access
 
-1. Install Tailscale on Windows and Android, sign in to the same account, and ensure both devices show as connected.
-2. In Tailscale, find the Android phone's Tailscale IP and/or MagicDNS name.
-3. Open PowerShell in the repository folder and run:
+### 1. Install Tailscale
+
+Install the official Tailscale application on both Android and Windows. Sign in to the same Tailscale account on both devices.
+
+This setup script does not install Tailscale or change your DNS settings.
+
+### 2. Find your phone's Tailscale address
+
+Open the Tailscale app and find your phone's Tailscale IP address or MagicDNS hostname.
+
+Use the values for your own devices in the examples below.
+
+### 3. Access the services
+
+Replace `YOUR_PHONE_TAILSCALE_NAME` with your phone's Tailscale IP address or MagicDNS hostname.
+
+| Service | Address |
+|---|---|
+| Jellyfin | `http://YOUR_PHONE_TAILSCALE_NAME:8096` |
+| File Browser | `http://YOUR_PHONE_TAILSCALE_NAME:8080` |
+| SSH | Port `8022` |
+
+Complete Jellyfin's first-run setup in your browser if you have not done so already.
+
+Keep File Browser authentication enabled. Use Tailscale for remote access rather than exposing these ports directly to the public internet.
+
+## Connect from Windows using SSH
+
+Open PowerShell on Windows and run:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\windows-connect.ps1
+ssh -p 8022 YOUR_TERMUX_USERNAME@YOUR_PHONE_TAILSCALE_NAME
 ```
 
-Or use the URLs/commands manually, replacing the hostname and username:
-
-```powershell
-Test-NetConnection YOUR_PHONE_TAILSCALE_IP -Port 8022
-Test-NetConnection YOUR_PHONE_TAILSCALE_IP -Port 8096
-Test-NetConnection YOUR_PHONE_TAILSCALE_IP -Port 8080
-ssh -p 8022 YOUR_TERMUX_USERNAME@YOUR_PHONE_TAILSCALE_IP
-```
-
-### Services
-
-- Jellyfin: `http://YOUR_PHONE_TAILSCALE_IP:8096`
-- File Browser: `http://YOUR_PHONE_TAILSCALE_IP:8080`
-- SSH: `ssh -p 8022 YOUR_TERMUX_USERNAME@YOUR_PHONE_TAILSCALE_IP`
-
-Use the Tailscale IP if MagicDNS doesn't resolve. If using MagicDNS, use the full name shown by Tailscale.
-
-## Download directly to Android from Windows
-
-Connect to Termux using SSH:
-
-```powershell
-ssh -p 8022 YOUR_TERMUX_USERNAME@YOUR_PHONE_TAILSCALE_IP
-```
-
-Then run this in the SSH session:
+Replace the username with the value returned by this command in Termux:
 
 ```bash
-aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL"
+whoami
 ```
+
+Replace the hostname with your phone's Tailscale IP or MagicDNS hostname.
+
+Once connected, commands run on the Android phone, not on Windows.
+
+## Download files using aria2
+
+The setup script installs `aria2`, which provides the `aria2c` command.
+
+All examples below save downloads into the phone's shared Download folder:
+
+```bash
+~/storage/shared/Download
+```
+
+Run the commands after connecting to the phone through SSH, or directly in Termux.
+
+### 1. Download from a direct HTTP/HTTPS URL
+
+```bash
+aria2c -c -x 8 -s 8 \
+  -d ~/storage/shared/Download \
+  "DIRECT_DOWNLOAD_URL"
+```
+
+Replace `DIRECT_DOWNLOAD_URL` with a direct file-download URL.
 
 - `-c` resumes supported interrupted downloads.
-- `-x 8` allows up to 8 connections per server.
-- `-s 8` requests up to 8 segments.
-- `-d` selects the Android shared Download folder.
+- `-x 8` allows up to eight connections per server.
+- `-s 8` splits a download into up to eight segments.
 
-Some sites require authentication or do not allow direct download tools; a normal webpage URL may not be a direct file URL.
+A normal webpage URL is not necessarily a direct download link. Some websites require authentication, cookies, or other special handling.
 
-To run in the background and log output:
+### 2. Download using a magnet link
 
 ```bash
-nohup aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL" > ~/aria2-download.log 2>&1 < /dev/null &
+aria2c --seed-time=0 \
+  -d ~/storage/shared/Download \
+  "magnet:?xt=urn:btih:YOUR_INFO_HASH"
 ```
 
-Watch the log:
+Replace the example magnet link with the complete magnet link you want to download.
+
+Magnet links use the BitTorrent protocol. The download requires reachable peers and sufficient peer availability; speed depends on the swarm and network conditions.
+
+### 3. Download using a local `.torrent` file
+
+If the torrent file is already in your phone's Download folder:
+
+```bash
+aria2c --seed-time=0 \
+  -d ~/storage/shared/Download \
+  ~/storage/shared/Download/file.torrent
+```
+
+Replace `file.torrent` with the actual filename.
+
+### 4. Download a `.torrent` file from a URL
+
+```bash
+aria2c --seed-time=0 \
+  -d ~/storage/shared/Download \
+  "TORRENT_FILE_URL"
+```
+
+This downloads the torrent file itself. To download the content described by that torrent, run `aria2c` again with the downloaded `.torrent` file as its input.
+
+### 5. Run a download in the background
+
+For a long download, you can disconnect from SSH while the process continues running, provided Android does not terminate Termux.
+
+Example for a direct URL:
+
+```bash
+nohup aria2c -c -x 8 -s 8 \
+  -d ~/storage/shared/Download \
+  "DIRECT_DOWNLOAD_URL" \
+  > ~/aria2-download.log 2>&1 < /dev/null &
+```
+
+Example for a magnet link:
+
+```bash
+nohup aria2c --seed-time=0 \
+  -d ~/storage/shared/Download \
+  "MAGNET_LINK" \
+  > ~/aria2-download.log 2>&1 < /dev/null &
+```
+
+For a torrent file, replace `MAGNET_LINK` with the path to the `.torrent` file.
+
+`--seed-time=0` tells aria2 not to continue seeding after a completed BitTorrent download.
+
+### 6. Monitor download progress
+
+View the log:
 
 ```bash
 tail -f ~/aria2-download.log
 ```
 
-Press `Ctrl+C` to stop viewing the log; it does not stop the background download.
+Press `Ctrl+C` to stop viewing the log. This does not normally stop the background download.
 
-## Useful Termux commands
+Check whether aria2 is running:
 
 ```bash
-# Start services if not already running
-bash ~/bin/start-media.sh
+pgrep -af aria2c
+```
 
-# Check processes
+List downloaded files:
+
+```bash
+ls -lh ~/storage/shared/Download
+```
+
+To stop a background download, identify its process and terminate that process deliberately. Avoid killing unrelated processes.
+
+## Start and check services
+
+Start the configured services:
+
+```bash
+bash ~/bin/start-media.sh
+```
+
+Check the running processes:
+
+```bash
 pgrep -af jellyfin
 pgrep -af filebrowser
 pgrep -af sshd
+```
 
-# Test Jellyfin and File Browser locally
+Check Jellyfin locally:
+
+```bash
 curl -I http://127.0.0.1:8096
-curl -I http://127.0.0.1:8080
+```
 
-# Read logs
+Check File Browser locally:
+
+```bash
+curl -I http://127.0.0.1:8080
+```
+
+Follow the service logs:
+
+```bash
 tail -f ~/.local/share/media-server-logs/jellyfin.log
 tail -f ~/.local/share/media-server-logs/filebrowser.log
 ```
 
-## DNS / privacy notes
+The SSH server normally listens on port `8022` in Termux.
 
-- Tailscale provides private connectivity between signed-in devices; it does not replace the need for the services to be running.
-- Android Private DNS (for example, AdGuard DNS) and Tailscale DNS can conflict depending on configuration. If internet stops when Tailscale connects, check the Tailscale DNS option before changing Android Private DNS.
-- If MagicDNS names do not resolve, use the Tailscale IP.
-- Never publish passwords, private keys, Tailscale auth keys, or File Browser databases in a public repository.
+## Android background reliability
 
-## Windows requirements
+Android may suspend or terminate background processes to save battery.
 
-- Windows 10/11.
-- Tailscale app installed and connected for private remote access.
-- OpenSSH Client available (usually included in modern Windows; check `ssh -V`).
-- Git is optional unless cloning the repository.
+For better reliability:
+
+1. Set Termux battery usage to **Unrestricted** or disable battery optimization for Termux, where available.
+2. Keep sufficient free storage available.
+3. Use `termux-wake-lock` when you need the CPU to stay awake during long-running tasks.
+4. Keep the phone plugged in during extended media streaming or large downloads.
+
+These steps improve reliability but do not guarantee that Android will keep every process running indefinitely.
+
+The setup script's `.bashrc` hook starts services when a Termux shell opens. It does not guarantee automatic startup immediately after an Android reboot. Termux:Boot can be configured separately if automatic startup is required.
+
+## Security and privacy
+
+- Use a strong, unique File Browser administrator password.
+- Never commit passwords, private keys, Tailscale credentials, databases, or personal logs to GitHub.
+- Prefer Tailscale for remote access.
+- Do not expose SSH, File Browser, or Jellyfin directly to the public internet without appropriate security controls.
+- Download and share only content you have permission to access.
+
+## Limitations
+
+- Jellyfin availability depends on Termux repository and device compatibility.
+- BitTorrent download speed depends on peers, network connectivity, and tracker or DHT availability.
+- Some direct-download websites require authentication or do not support aria2.
+- Android storage permissions and background restrictions can affect downloads and services.
+- This project does not configure Tailscale, change DNS settings, or guarantee boot-time startup.
 
 ## Troubleshooting
 
-- **Jellyfin doesn't start:** check `~/.local/share/media-server-logs/jellyfin.log`; verify Jellyfin package availability for the Termux architecture.
-- **SSH works but Jellyfin doesn't:** run `curl -I http://127.0.0.1:8096` on the phone, then test port 8096 from Windows.
-- **MagicDNS doesn't resolve:** try the phone's Tailscale IP.
-- **File Browser login:** the first-run password is set during setup. Existing credentials are not reset by rerunning the script.
-- **Services stop in background:** check Android battery restrictions and Termux notifications; Android can kill background processes.
+### SSH connection fails
+
+- Confirm that Tailscale is connected on both devices.
+- Confirm that Termux is running and the SSH server is started.
+- Check that you are using the correct Termux username and phone address.
+- Use the phone's Tailscale IP if its MagicDNS hostname does not resolve.
+
+### Jellyfin or File Browser does not open
+
+- Check whether the relevant process is running.
+- Start services with `bash ~/bin/start-media.sh`.
+- Verify the port and phone's current Tailscale address.
+- Review the service logs for errors.
+
+### aria2 does not download
+
+- Check whether the URL is a direct download link.
+- Confirm that the phone has internet access and sufficient storage.
+- For BitTorrent, check whether peers are available and the network permits peer connections.
+- Inspect `~/aria2-download.log` for error messages.
