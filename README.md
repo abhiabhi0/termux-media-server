@@ -108,6 +108,13 @@ Once connected, commands run on the Android phone, not on Windows.
 
 The setup script installs a small `dl` command backed by aria2. You do not need to remember aria2 options.
 
+If you've already set up the server before this helper was added, install it once with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/download.sh -o "$PREFIX/bin/dl"
+chmod 755 "$PREFIX/bin/dl"
+```
+
 ### Recommended: paste a link when prompted
 
 In Termux or an SSH session connected to the phone, run:
