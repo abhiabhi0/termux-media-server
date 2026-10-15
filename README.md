@@ -218,6 +218,23 @@ Start the configured services:
 bash ~/bin/start-media.sh
 ```
 
+The repository also includes the standalone [`start-media.sh`](start-media.sh) startup script. The setup installer creates a copy at `~/bin/start-media.sh`. If you need to install or refresh it manually, run this in Termux:
+
+```bash
+mkdir -p ~/bin
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/start-media.sh -o ~/bin/start-media.sh
+chmod 700 ~/bin/start-media.sh
+bash ~/bin/start-media.sh
+```
+
+The plain-text [`QUICK_COMMANDS.txt`](QUICK_COMMANDS.txt) file contains common startup, status-checking, download, log, and Tailscale commands. To copy it onto the phone and view it in Termux:
+
+```bash
+mkdir -p ~/notes
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/QUICK_COMMANDS.txt -o ~/notes/QUICK_COMMANDS.txt
+cat ~/notes/QUICK_COMMANDS.txt
+```
+
 Check the running processes:
 
 ```bash
