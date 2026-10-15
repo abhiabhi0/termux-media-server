@@ -104,117 +104,48 @@ Replace the hostname with your phone's Tailscale IP or MagicDNS hostname.
 
 Once connected, commands run on the Android phone, not on Windows.
 
-## Download files using aria2
+## Simple downloads with `dl`
 
-The setup script installs `aria2`, which provides the `aria2c` command.
+The setup script installs a small `dl` command backed by aria2. You do not need to remember aria2 options.
 
-All examples below save downloads into the phone's shared Download folder:
+### Recommended: paste a link when prompted
 
-```bash
-~/storage/shared/Download
-```
-
-Run the commands after connecting to the phone through SSH, or directly in Termux.
-
-### 1. Download from a direct HTTP/HTTPS URL
+In Termux or an SSH session connected to the phone, run:
 
 ```bash
-aria2c -c -x 8 -s 8 \
-  -d ~/storage/shared/Download \
-  "DIRECT_DOWNLOAD_URL"
+dl
 ```
 
-Replace `DIRECT_DOWNLOAD_URL` with a direct file-download URL.
+Paste one of these at the prompt and press Enter:
 
-- `-c` resumes supported interrupted downloads.
-- `-x 8` allows up to eight connections per server.
-- `-s 8` splits a download into up to eight segments.
+- A direct HTTP/HTTPS download URL.
+- A magnet link.
+- A path to a local `.torrent` file.
+- A URL pointing to a remote `.torrent` file.
 
-A normal webpage URL is not necessarily a direct download link. Some websites require authentication, cookies, or other special handling.
+Downloads are saved to `~/storage/shared/Download`, and aria2 displays progress in the terminal.
 
-### 2. Download using a magnet link
+### Or provide the link directly
 
 ```bash
-aria2c --seed-time=0 \
-  -d ~/storage/shared/Download \
-  "magnet:?xt=urn:btih:YOUR_INFO_HASH"
+dl "https://example.com/file.zip"
+dl "magnet:?xt=urn:btih:..."
+dl "https://example.com/file.torrent"
+dl "~/storage/shared/Download/file.torrent"
 ```
 
-Replace the example magnet link with the complete magnet link you want to download.
+**Important:** Quote magnet links when passing them as command arguments because they commonly contain `&` characters. The prompt mode (`dl` with no arguments) avoids this issue.
 
-Magnet links use the BitTorrent protocol. The download requires reachable peers and sufficient peer availability; speed depends on the swarm and network conditions.
+For a remote `.torrent` URL, aria2 automatically parses the torrent and starts downloading its contents when the URL ends in `.torrent` or the server responds with the BitTorrent content type. The helper uses aria2's `--follow-torrent=mem` option, so it does not leave a separate torrent metadata file in the download directory when processing such a URL. If a site hides the torrent behind a webpage or returns an unexpected content type, use a direct torrent-file URL instead.
 
-### 3. Download using a local `.torrent` file
+For BitTorrent downloads, the helper stops seeding after completion. Speed depends on peer availability and network connectivity. Only download content you have permission to access.
 
-If the torrent file is already in your phone's Download folder:
-
-```bash
-aria2c --seed-time=0 \
-  -d ~/storage/shared/Download \
-  ~/storage/shared/Download/file.torrent
-```
-
-Replace `file.torrent` with the actual filename.
-
-### 4. Download a `.torrent` file from a URL
-
-```bash
-aria2c --seed-time=0 \
-  -d ~/storage/shared/Download \
-  "TORRENT_FILE_URL"
-```
-
-This downloads the torrent file itself. To download the content described by that torrent, run `aria2c` again with the downloaded `.torrent` file as its input.
-
-### 5. Run a download in the background
-
-For a long download, you can disconnect from SSH while the process continues running, provided Android does not terminate Termux.
-
-Example for a direct URL:
-
-```bash
-nohup aria2c -c -x 8 -s 8 \
-  -d ~/storage/shared/Download \
-  "DIRECT_DOWNLOAD_URL" \
-  > ~/aria2-download.log 2>&1 < /dev/null &
-```
-
-Example for a magnet link:
-
-```bash
-nohup aria2c --seed-time=0 \
-  -d ~/storage/shared/Download \
-  "MAGNET_LINK" \
-  > ~/aria2-download.log 2>&1 < /dev/null &
-```
-
-For a torrent file, replace `MAGNET_LINK` with the path to the `.torrent` file.
-
-`--seed-time=0` tells aria2 not to continue seeding after a completed BitTorrent download.
-
-### 6. Monitor download progress
-
-View the log:
-
-```bash
-tail -f ~/aria2-download.log
-```
-
-Press `Ctrl+C` to stop viewing the log. This does not normally stop the background download.
-
-Check whether aria2 is running:
-
-```bash
-pgrep -af aria2c
-```
-
-List downloaded files:
+Check downloads and active processes:
 
 ```bash
 ls -lh ~/storage/shared/Download
+pgrep -af aria2c
 ```
-
-To stop a background download, identify its process and terminate that process deliberately. Avoid killing unrelated processes.
 
 ## Start and check services
 
