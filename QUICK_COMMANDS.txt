@@ -75,7 +75,7 @@ List downloaded files:
   ls -lh ~/storage/shared/Download
 
 
-5. ACCESS SERVICES OVER TAILSCALE
+4. ACCESS SERVICES OVER TAILSCALE
 ----------------------------------
 
 Replace PHONE_TAILSCALE_IP_OR_NAME with this phone's current Tailscale IP or MagicDNS name.
@@ -93,7 +93,7 @@ Find the Termux username:
   whoami
 
 
-6. LOGS AND STORAGE
+5. LOGS AND STORAGE
 -------------------
 
 Jellyfin log:
