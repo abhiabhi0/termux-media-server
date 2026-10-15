@@ -1,0 +1,8 @@
+# Local secrets and device-specific data
+*.db
+*.sqlite
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
