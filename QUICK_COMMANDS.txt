@@ -44,55 +44,31 @@ Check Jellyfin and File Browser locally:
 Jellyfin may return "302 Found" and redirect to /web/; that is normal.
 
 
-3. DOWNLOAD WITH ARIA2C
------------------------
+3. SIMPLE DOWNLOADS
+-------------------
 
-All examples save to:
-  ~/storage/shared/Download
+Use the simple "dl" helper. Run:
 
-Direct HTTP/HTTPS URL:
-  aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL"
+  dl
 
-Replace DIRECT_DOWNLOAD_URL with a direct file URL.
-  -c resumes supported interrupted downloads.
-  -x 8 allows up to 8 connections per server.
-  -s 8 splits the download into up to 8 segments.
-Some websites require login/cookies; a webpage URL may not be a direct file URL.
+Then paste a URL, magnet link, local .torrent path, or remote .torrent URL when prompted.
 
+Examples if you want to provide the link on the command line:
 
-Magnet link:
-  aria2c --seed-time=0 -d ~/storage/shared/Download "MAGNET_LINK"
+  dl "https://example.com/file.zip"
+  dl "magnet:?xt=urn:btih:..."
+  dl "https://example.com/file.torrent"
+  dl "~/storage/shared/Download/file.torrent"
 
-Replace MAGNET_LINK with the complete magnet link. BitTorrent speed depends on available peers and network conditions.
+IMPORTANT:
+- Downloads are saved in ~/storage/shared/Download.
+- A remote .torrent URL is processed as a torrent by aria2 when its URL ends in .torrent or the server returns the BitTorrent content type. It starts downloading the torrent contents, rather than saving only the .torrent file.
+- When passing a magnet link as an argument, wrap it in quotes because it can contain '&'. Running "dl" without arguments and pasting at the prompt avoids shell quoting issues.
+- aria2 shows progress in the terminal. Ctrl+C interrupts the foreground process; rerun the same link to resume where supported.
+- Seeding stops after completion.
+- Only download content you have permission to access.
 
-
-Existing .torrent file:
-  aria2c --seed-time=0 -d ~/storage/shared/Download ~/storage/shared/Download/file.torrent
-
-Replace file.torrent with the actual filename.
-
-
-Download a .torrent file from a URL:
-  aria2c --seed-time=0 -d ~/storage/shared/Download "TORRENT_FILE_URL"
-
-This downloads the .torrent file itself. Run aria2c again using that downloaded .torrent file to download its contents.
-
-
-4. RUN A DOWNLOAD IN THE BACKGROUND
------------------------------------
-
-Direct URL:
-  nohup aria2c -c -x 8 -s 8 -d ~/storage/shared/Download "DIRECT_DOWNLOAD_URL" > ~/aria2-download.log 2>&1 < /dev/null &
-
-Magnet link:
-  nohup aria2c --seed-time=0 -d ~/storage/shared/Download "MAGNET_LINK" > ~/aria2-download.log 2>&1 < /dev/null &
-
-Monitor the log:
-  tail -f ~/aria2-download.log
-
-Press Ctrl+C to stop viewing the log; this normally does not stop the background download.
-
-Check aria2:
+Check active downloads:
   pgrep -af aria2c
 
 List downloaded files:
@@ -126,8 +102,8 @@ Jellyfin log:
 File Browser log:
   tail -f ~/.local/share/media-server-logs/filebrowser.log
 
-aria2 log:
-  tail -f ~/aria2-download.log
+aria2 process:
+  pgrep -af aria2c
 
 Check available storage:
   df -h
@@ -139,4 +115,5 @@ NOTES
 - Android may stop background services/downloads to save battery. Set Termux battery usage to Unrestricted where available.
 - The startup script uses termux-wake-lock if available, but Android can still terminate processes.
 - Preferred service startup command: bash ~/bin/start-media.sh
+- Use "dl" for downloads instead of memorizing aria2c options.
 - Only download or share content you have permission to access.
