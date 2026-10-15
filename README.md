@@ -1,6 +1,12 @@
 # Termux Media Server
 
-A personal media and file server for Android using Termux. Access your files, stream media with Jellyfin, manage files through a browser, and download files remotely from a Windows PC.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://termux.dev/)
+[![Shell: Bash](https://img.shields.io/badge/Shell-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
+
+A self-hosted media and file server setup for Android using Termux. It brings together Jellyfin for media streaming, File Browser for web-based file management, SSH for remote administration, and aria2 for downloads. Connect from Windows or other devices over your private Tailscale network.
+
+The project provides setup automation, standalone service startup, and a plain-text quick reference. Compatibility depends on your device architecture and available Termux packages; review the requirements and limitations before installing.
 
 ## Features
 
@@ -317,3 +323,13 @@ The setup script's `.bashrc` hook starts services when a Termux shell opens. It 
 - Confirm that the phone has internet access and sufficient storage.
 - For BitTorrent, check whether peers are available and the network permits peer connections.
 - Inspect `~/aria2-download.log` for error messages.
+
+## Contributing
+
+Contributions are welcome, including bug reports, documentation improvements, compatibility fixes, and tested enhancements.
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request. For significant changes, open an issue first to discuss the approach. Never commit passwords, tokens, private keys, personal logs, or runtime databases.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). You may use, modify, and distribute the project under the terms of that license.
