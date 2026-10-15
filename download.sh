@@ -41,8 +41,8 @@ else
   IFS= read -r INPUT || true
 fi
 
-INPUT="${INPUT#" ${INPUT%%[![:space:]]*}"}"
-INPUT="${INPUT%" ${INPUT##*[![:space:]]}"}"
+INPUT="${INPUT#"${INPUT%%[![:space:]]*}"}"
+INPUT="${INPUT%"${INPUT##*[![:space:]]}"}"
 
 if [[ -z "$INPUT" ]]; then
   echo "Error: no URL or torrent path was provided." >&2
@@ -76,7 +76,7 @@ case "$INPUT" in
     aria2c "${COMMON_OPTIONS[@]}" --follow-torrent=mem "$INPUT"
     ;;
   *)
-    if [[ -f "$INPUT" && "$INPUT" =~ \.torrent$ ]]; then
+    if [[ -f "$INPUT" && "${INPUT,,}" == *.torrent ]]; then
       echo "Starting download from local torrent file..."
       aria2c --dir="$DOWNLOAD_DIR" --seed-time=0 "$INPUT"
     elif [[ -f "$INPUT" ]]; then
