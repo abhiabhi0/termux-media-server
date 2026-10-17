@@ -30,33 +30,22 @@ Jellyfin package availability and performance depend on your Android architectur
 
 ## Installation
 
-### 1. Install Termux
+### One-command installation (no GitHub login required)
 
-Install and open Termux on your Android phone.
-
-### 2. Run the setup script
-
-Download `setup-media-server.sh` from this repository and place it in your phone's Download folder.
-
-In Termux, run:
+1. Install Termux from a trusted source, such as [F-Droid](https://f-droid.org/packages/com.termux/) or the official [Termux GitHub repository](https://github.com/termux/termux-app).
+2. Open Termux and paste this single line:
 
 ```bash
-termux-setup-storage
-cd ~/storage/shared/Download
-bash setup-media-server.sh
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-media-server.sh -o "$HOME/setup-media-server.sh" && bash "$HOME/setup-media-server.sh"
 ```
 
-Alternatively, if you placed the script in your Termux home directory:
+The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it. It installs the required packages, requests Android shared-storage permission, installs the `dl` download shortcut, and configures Jellyfin, File Browser, and SSH where supported.
 
-```bash
-bash ~/setup-media-server.sh
-```
+During setup, Android may show a storage-permission prompt. On a first-time File Browser setup, you will be prompted to create an administrator password. Keep it private.
 
-The script installs the required packages, configures the available services, and requests shared-storage access.
+The setup script can also be downloaded and reviewed before running it. It does not install or sign in to Tailscale; install the Tailscale app separately on the phone and other devices that need private remote access.
 
-If File Browser is being configured for the first time, the script asks you to set an administrator password. Keep it private.
-
-**Note:** If Jellyfin cannot be installed from your configured Termux repositories, check package availability and repository compatibility for your device.
+**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. If the package is unavailable for your device, setup will report an error rather than complete the Jellyfin installation.
 
 ## Configure remote access
 
