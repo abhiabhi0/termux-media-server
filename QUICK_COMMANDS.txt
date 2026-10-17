@@ -7,41 +7,41 @@ Or edit/view it with:
   nano ~/notes/QUICK_COMMANDS.txt
 
 
-1. START SERVICES
------------------
+1. START / RECOVER SERVICES
+---------------------------
 
-Preferred command (starts SSH, Jellyfin, and File Browser if not already running):
+Start SSH, Jellyfin (if installed), and File Browser (if configured):
   bash ~/bin/start-media.sh
 
-Start SSH manually:
-  sshd
+This is normally handled automatically when a Termux shell opens. For startup after Android reboot, install and open the Termux:Boot Android app once; see the README. Also set Termux battery usage to Unrestricted where available.
 
-Start Jellyfin manually (only if the startup script did not start it):
-  export DOTNET_ROOT="$PREFIX/lib/dotnet"
-  export DOTNET_ROOT_ARM64="$PREFIX/lib/dotnet"
-  nohup jellyfin >> ~/.local/share/media-server-logs/jellyfin.log 2>&1 < /dev/null &
+Check all service processes and local web endpoints in one command:
+  media-status
 
-Start File Browser manually (only if the startup script did not start it):
-  nohup filebrowser --address 0.0.0.0 --port 8080 --root "$HOME/storage/shared" -d "$HOME/.config/filebrowser/filebrowser.db" >> ~/.local/share/media-server-logs/filebrowser.log 2>&1 < /dev/null &
+Set your Termux SSH login password (only if you have not already set one):
+  passwd
 
-Keep File Browser authentication enabled. Use Tailscale for remote access; do not expose File Browser directly to the public internet.
+Check Termux username:
+  whoami
+
+SSH normally listens on port 8022. Keep File Browser authentication enabled and use Tailscale for remote access rather than exposing File Browser directly to the public internet.
 
 
-2. CHECK IF SERVICES ARE RUNNING
---------------------------------
+2. INDIVIDUAL CHECKS
+--------------------
 
   pgrep -af sshd
   pgrep -af jellyfin
   pgrep -af filebrowser
   pgrep -af aria2c
 
-If a command prints a matching process line, the process is running. If it prints nothing, it may not be running.
+If a command prints a matching process line, the process is running. aria2 normally runs only during downloads.
 
-Check Jellyfin and File Browser locally:
+Check local web endpoints:
   curl -I http://127.0.0.1:8096
   curl -I http://127.0.0.1:8080
 
-Jellyfin may return "302 Found" and redirect to /web/; that is normal.
+Jellyfin may return "302 Found" and redirect to /web/; that is normal. A missing Jellyfin package is possible on unsupported Android architectures.
 
 
 3. SIMPLE DOWNLOADS
@@ -96,11 +96,17 @@ Find the Termux username:
 5. LOGS AND STORAGE
 -------------------
 
-Jellyfin log:
+Jellyfin log (if installed):
   tail -f ~/.local/share/media-server-logs/jellyfin.log
 
 File Browser log:
   tail -f ~/.local/share/media-server-logs/filebrowser.log
+
+SSH startup errors:
+  tail -f ~/.local/share/media-server-logs/sshd.log
+
+Termux:Boot startup log:
+  tail -f ~/.local/share/media-server-logs/boot.log
 
 aria2 process:
   pgrep -af aria2c
@@ -113,7 +119,9 @@ NOTES
 -----
 
 - Android may stop background services/downloads to save battery. Set Termux battery usage to Unrestricted where available.
-- The startup script uses termux-wake-lock if available, but Android can still terminate processes.
+- The startup script and boot hook use termux-wake-lock if available, but Android can still terminate processes.
+- For startup after reboot, install and open the Termux:Boot app once from the same source as Termux.
 - Preferred service startup command: bash ~/bin/start-media.sh
+- Run media-status to check services without memorizing separate commands.
 - Use "dl" for downloads instead of memorizing aria2c options.
 - Only download or share content you have permission to access.
