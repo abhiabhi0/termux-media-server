@@ -39,13 +39,13 @@ Jellyfin package availability and performance depend on your Android architectur
 curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-media-server.sh -o "$HOME/setup-media-server.sh" && bash "$HOME/setup-media-server.sh"
 ```
 
-The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it. It installs the required packages, requests Android shared-storage permission, installs the `dl` download shortcut, and configures Jellyfin, File Browser, and SSH where supported.
+The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it. It installs the required utilities, requests Android shared-storage permission, installs the `dl` download shortcut, and configures File Browser and SSH. It also attempts to install Jellyfin where the package is available.
 
 During setup, Android may show a storage-permission prompt. On a first-time File Browser setup, you will be prompted to create an administrator password. Keep it private.
 
 The setup script can also be downloaded and reviewed before running it. It does not install or sign in to Tailscale; install the Tailscale app separately on the phone and other devices that need private remote access.
 
-**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. If the package is unavailable for your device, setup will report an error rather than complete the Jellyfin installation.
+**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. The current official Termux Jellyfin server package excludes 32-bit ARM. If Jellyfin is unavailable, the installer now displays a warning and continues setting up the other services instead of stopping the entire installation.
 
 ## Configure remote access
 
