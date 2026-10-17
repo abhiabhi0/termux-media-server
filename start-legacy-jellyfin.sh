@@ -41,8 +41,12 @@ fi
 # A live PID recorded by the previous launch means startup is already in progress.
 if [[ -s "$PID_FILE" ]]; then
   old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+  old_args=""
   if [[ "$old_pid" =~ ^[0-9]+$ ]] && kill -0 "$old_pid" 2>/dev/null; then
-    say "Legacy Jellyfin is already starting (launcher PID $old_pid)."
+    old_args="$(ps -p "$old_pid" -o args= 2>/dev/null || true)"
+  fi
+  if [[ "$old_args" == *proot-distro* || "$old_args" == *proot* ]]; then
+    say "Legacy Jellyfin is already starting or running (launcher PID $old_pid)."
     exit 0
   fi
   rm -f "$PID_FILE"
