@@ -17,7 +17,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for script in setup-media-server.sh start-media.sh boot-start-media.sh media-status.sh download.sh; do
+          for script in setup-media-server.sh setup-legacy-jellyfin.sh start-legacy-jellyfin.sh start-media.sh boot-start-media.sh media-status.sh download.sh; do
             echo "Checking $script"
             bash -n "$script"
           done
