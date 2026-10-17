@@ -93,6 +93,7 @@ install_repo_file() {
 }
 
 say "Installing background launcher and refreshing service/status/boot scripts"
+install_repo_file "setup-legacy-jellyfin.sh" "$HOME/bin/setup-legacy-jellyfin.sh" 700
 install_repo_file "start-legacy-jellyfin.sh" "$HOME/bin/start-legacy-jellyfin.sh" 700
 install_repo_file "start-media.sh" "$HOME/bin/start-media.sh" 700
 install_repo_file "media-status.sh" "$PREFIX/bin/media-status" 755
