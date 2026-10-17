@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Android + Termux Media Server setup
-# Usage: bash setup-media-server.sh
-# Designed for Termux on Android. Package availability depends on CPU architecture/repository.
+# One-time Android + Termux Media Server setup.
+# Usage: curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-media-server.sh -o "$HOME/setup-media-server.sh" && bash "$HOME/setup-media-server.sh"
 set -Eeuo pipefail
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
@@ -10,7 +9,10 @@ FB_DIR="$HOME/.config/filebrowser"
 FB_DB="$FB_DIR/filebrowser.db"
 LOG_DIR="$HOME/.local/share/media-server-logs"
 START_SCRIPT="$HOME/bin/start-media.sh"
+BOOT_SCRIPT="$HOME/.termux/boot/00-start-media-server"
+SSH_SETUP_MARKER="$HOME/.config/termux-media-server/ssh-password-checked"
 BASHRC="$HOME/.bashrc"
+RAW_BASE="https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main"
 
 say() { printf '\n==> %s\n' "$*"; }
 warn() { printf '\nWARNING: %s\n' "$*" >&2; }
@@ -32,19 +34,51 @@ say "Updating Termux packages"
 pkg update -y
 pkg upgrade -y
 
-say "Installing common utilities"
-pkg install -y openssh curl wget jq tar gzip aria2 python
+say "Installing required utilities"
+pkg install -y openssh termux-auth procps termux-tools curl wget jq tar gzip aria2 python
 
 say "Requesting Android shared-storage permission"
 termux-setup-storage || true
-mkdir -p "$HOME/bin" "$FB_DIR" "$LOG_DIR"
+mkdir -p "$HOME/bin" "$HOME/.termux/boot" "$HOME/.config/termux-media-server" "$FB_DIR" "$LOG_DIR" "$PREFIX/bin"
 
-say "Installing the simple aria2 download command (dl)"
-if [[ -f "$SCRIPT_DIR/download.sh" ]]; then
-  install -m 755 "$SCRIPT_DIR/download.sh" "$PREFIX/bin/dl"
-else
-  curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/download.sh -o "$PREFIX/bin/dl"
-  chmod 755 "$PREFIX/bin/dl"
+# During a one-command install, only the installer itself is local. Fetch the
+# companion scripts from this public repository without requiring GitHub login.
+install_repo_file() {
+  local repo_path="$1"
+  local destination="$2"
+  local mode="${3:-755}"
+  if [[ -f "$SCRIPT_DIR/$repo_path" ]]; then
+    install -m "$mode" "$SCRIPT_DIR/$repo_path" "$destination"
+  else
+    curl -fsSL "$RAW_BASE/$repo_path" -o "$destination"
+    chmod "$mode" "$destination"
+  fi
+}
+
+say "Installing service, boot, status, and download scripts"
+install_repo_file "start-media.sh" "$START_SCRIPT" 700
+install_repo_file "boot-start-media.sh" "$BOOT_SCRIPT" 700
+install_repo_file "media-status.sh" "$PREFIX/bin/media-status" 755
+install_repo_file "download.sh" "$PREFIX/bin/dl" 755
+
+# Ask only once whether password-based SSH is already configured. This avoids
+# overwriting an existing password when an installation is rerun.
+if [[ ! -f "$SSH_SETUP_MARKER" ]]; then
+  echo
+  echo "SSH password setup"
+  echo "If you already ran 'passwd' and can log in over SSH, answer yes."
+  printf "Have you already set your SSH password? [y/N]: "
+  IFS= read -r ssh_password_ready || ssh_password_ready=""
+  case "$ssh_password_ready" in
+    [Yy]|[Yy][Ee][Ss])
+      say "Keeping the existing SSH password"
+      ;;
+    *)
+      command -v passwd >/dev/null 2>&1 || die "The passwd command is unavailable. Run 'pkg install termux-auth', then 'passwd', then rerun this setup."
+      passwd
+      ;;
+  esac
+  touch "$SSH_SETUP_MARKER"
 fi
 
 say "Installing Jellyfin (optional)"
@@ -52,14 +86,13 @@ TERMUX_ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
 JELLYFIN_STATUS="not installed"
 
 # The official Termux Jellyfin server package excludes 32-bit ARM.
-# Keep installing the other services when Jellyfin is unavailable.
-if [[ "$TERMUX_ARCH" == "arm" || "$TERMUX_ARCH" == "armv7" || "$TERMUX_ARCH" == "armv7l" ]]; then
+if [[ "$TERMUX_ARCH" == "arm" || "$TERMUX_ARCH" == "armhf" || "$TERMUX_ARCH" == "armv7" || "$TERMUX_ARCH" == "armv7l" ]]; then
   warn "Jellyfin is not available for 32-bit ARM in the official Termux package. Continuing with File Browser, SSH, and aria2."
   JELLYFIN_STATUS="skipped (32-bit ARM not supported by package)"
 elif pkg install -y jellyfin-server jellyfin-ffmpeg; then
   JELLYFIN_STATUS="installed"
 else
-  warn "Jellyfin packages could not be found or installed for architecture '$TERMUX_ARCH'. Continuing with the other services. See the README troubleshooting section to diagnose repository/package availability."
+  warn "Jellyfin packages could not be found or installed for architecture '$TERMUX_ARCH'. Continuing with other services."
   JELLYFIN_STATUS="unavailable for this Termux setup"
 fi
 
@@ -100,78 +133,41 @@ else
   say "Existing File Browser database found; preserving existing users and password"
 fi
 
-say "Creating service startup script"
-cat > "$START_SCRIPT" <<'START_EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-set -u
-PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
-HOME="${HOME:-/data/data/com.termux/files/home}"
-LOG_DIR="$HOME/.local/share/media-server-logs"
-FB_DB="$HOME/.config/filebrowser/filebrowser.db"
-mkdir -p "$LOG_DIR"
+chmod 700 "$START_SCRIPT" "$BOOT_SCRIPT"
+chmod 755 "$PREFIX/bin/dl" "$PREFIX/bin/media-status"
 
-# Jellyfin's .NET runtime path in Termux package builds.
-export DOTNET_ROOT="$PREFIX/lib/dotnet"
-export DOTNET_ROOT_ARM64="$PREFIX/lib/dotnet"
-
-# Helpful but not a guarantee against Android background process killing.
-if command -v termux-wake-lock >/dev/null 2>&1; then
-  termux-wake-lock >/dev/null 2>&1 || true
-fi
-
-if ! pgrep -x sshd >/dev/null 2>&1; then
-  sshd
-fi
-
-if command -v jellyfin >/dev/null 2>&1 && ! pgrep -x jellyfin >/dev/null 2>&1; then
-  nohup jellyfin >> "$LOG_DIR/jellyfin.log" 2>&1 < /dev/null &
-fi
-
-if command -v filebrowser >/dev/null 2>&1 && [[ -f "$FB_DB" ]]; then
-  if ! pgrep -f '[f]ilebrowser --address 0.0.0.0 --port 8080' >/dev/null 2>&1; then
-    nohup filebrowser --address 0.0.0.0 --port 8080 \
-      --root "$HOME/storage/shared" \
-      -d "$FB_DB" >> "$LOG_DIR/filebrowser.log" 2>&1 < /dev/null &
-  fi
-fi
-START_EOF
-chmod 700 "$START_SCRIPT"
-
+# Start services whenever a Termux shell opens. Avoid duplicate hook lines.
 touch "$BASHRC"
 HOOK='bash "$HOME/bin/start-media.sh"'
 if ! grep -Fqx "$HOOK" "$BASHRC"; then
   printf '\n# Start media-server services when a Termux shell opens\n%s\n' "$HOOK" >> "$BASHRC"
 fi
 
-say "Starting services"
+say "Starting services now"
 bash "$START_SCRIPT"
-sleep 2
 
 cat <<SUMMARY
 
 SETUP COMPLETE
 ==============
 Termux username:       $(id -un)
-Shared storage:        $HOME/storage/shared
-Download folder:       $HOME/storage/shared/Download
+SSH port:              8022
+File Browser:          http://127.0.0.1:8080
 Jellyfin status:       $JELLYFIN_STATUS
 Jellyfin URL (if installed): http://127.0.0.1:8096
-File Browser:          http://127.0.0.1:8080
-SSH port:              8022
 aria2:                 $(command -v aria2c || echo unavailable)
-Download shortcut:     $(command -v dl || echo "$PREFIX/bin/dl")
-Logs:                  $LOG_DIR
+Download command:      dl
+Status command:        media-status
+Startup command:       bash ~/bin/start-media.sh
+Log directory:         $LOG_DIR
 
-Download usage:
-- Run: dl
-- Paste a direct URL, magnet link, local .torrent path, or remote .torrent URL.
-- Downloads go to: $HOME/storage/shared/Download
+ONE-TIME FINAL STEPS
+1. If you want startup after a reboot, install Termux:Boot from the same trusted source as Termux and open Termux:Boot once.
+   A boot hook has already been installed at: $BOOT_SCRIPT
+2. In Android Settings, set Termux battery usage to Unrestricted / Don't optimize where available.
+3. Set up Tailscale separately if you need remote access from outside your local network.
+4. Complete Jellyfin's first-run setup only if Jellyfin was installed and is available on this device.
 
-Next:
-- Install Tailscale separately on Android and Windows; sign in to the same tailnet.
-- Find this phone's Tailscale IP/name in the Tailscale app/admin console.
-- On Windows use the included windows-connect.ps1 or see README.
-- Complete Jellyfin's initial setup in a browser if not already done.
-- This script starts services when a Termux shell opens; it does not guarantee startup immediately after Android reboot.
-- Existing Jellyfin/File Browser data is preserved. Back up important configuration before major changes.
+The installer sets up shell startup and a Termux:Boot hook, but Android may still terminate background processes.
+Existing File Browser users/database and Jellyfin data are preserved.
 SUMMARY
