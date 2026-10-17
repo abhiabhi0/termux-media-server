@@ -1,0 +1,23 @@
+name: Shell script checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bash-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Bash syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in setup-media-server.sh start-media.sh boot-start-media.sh media-status.sh download.sh; do
+            echo "Checking $script"
+            bash -n "$script"
+          done
