@@ -55,10 +55,12 @@ install_repo_file() {
   fi
 }
 
-say "Installing service, boot, status, and download scripts"
+say "Installing service, boot, status, legacy-Jellyfin, and download scripts"
 install_repo_file "start-media.sh" "$START_SCRIPT" 700
 install_repo_file "boot-start-media.sh" "$BOOT_SCRIPT" 700
 install_repo_file "media-status.sh" "$PREFIX/bin/media-status" 755
+install_repo_file "start-legacy-jellyfin.sh" "$HOME/bin/start-legacy-jellyfin.sh" 700
+install_repo_file "setup-legacy-jellyfin.sh" "$HOME/bin/setup-legacy-jellyfin.sh" 700
 install_repo_file "download.sh" "$PREFIX/bin/dl" 755
 
 # Ask only once whether password-based SSH is already configured. This avoids
@@ -84,13 +86,15 @@ fi
 say "Installing Jellyfin (optional)"
 TERMUX_ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
 JELLYFIN_STATUS="not installed"
+IS_ARM32_TERMUX=0
 
 # The official Termux Jellyfin server package excludes 32-bit ARM.
 if [[ "$TERMUX_ARCH" == "arm" || "$TERMUX_ARCH" == "armhf" || "$TERMUX_ARCH" == "armv7" || "$TERMUX_ARCH" == "armv7l" ]]; then
-  warn "Jellyfin is not available for 32-bit ARM in the official Termux package. Continuing with File Browser, SSH, and aria2."
-  JELLYFIN_STATUS="skipped (32-bit ARM not supported by package)"
+  IS_ARM32_TERMUX=1
+  warn "Native Jellyfin is not available for 32-bit ARM. An optional Jellyfin 10.10.7 Debian/PRoot installer is available."
+  JELLYFIN_STATUS="not installed (32-bit ARM)"
 elif pkg install -y jellyfin-server jellyfin-ffmpeg; then
-  JELLYFIN_STATUS="installed"
+  JELLYFIN_STATUS="installed (native Termux)"
 else
   warn "Jellyfin packages could not be found or installed for architecture '$TERMUX_ARCH'. Continuing with other services."
   JELLYFIN_STATUS="unavailable for this Termux setup"
@@ -133,7 +137,36 @@ else
   say "Existing File Browser database found; preserving existing users and password"
 fi
 
-chmod 700 "$START_SCRIPT" "$BOOT_SCRIPT"
+# Offer an explicitly opted-in legacy Jellyfin install only on 32-bit ARM.
+# It installs an older server inside Debian/PRoot and uses extra storage.
+if [[ "$IS_ARM32_TERMUX" == "1" ]]; then
+  if [[ -f "$HOME/.config/termux-media-server/legacy-jellyfin-enabled" ]]; then
+    JELLYFIN_STATUS="legacy Jellyfin 10.10.7 enabled"
+    say "Legacy Jellyfin already configured; keeping its installation"
+  else
+    echo
+    echo "Legacy Jellyfin for 32-bit ARM"
+    echo "This installs Jellyfin 10.10.7 inside Debian/PRoot and uses extra storage."
+    echo "It is an older release; keep access on your local network or Tailscale."
+    printf "Install legacy Jellyfin now? [y/N]: "
+    IFS= read -r legacy_jellyfin_choice || legacy_jellyfin_choice=""
+    case "$legacy_jellyfin_choice" in
+      [Yy]|[Yy][Ee][Ss])
+        if bash "$HOME/bin/setup-legacy-jellyfin.sh"; then
+          JELLYFIN_STATUS="legacy Jellyfin 10.10.7 (Debian/PRoot)"
+        else
+          warn "Legacy Jellyfin setup did not complete. The other media services can still be used."
+          JELLYFIN_STATUS="legacy Jellyfin setup failed (see errors above)"
+        fi
+        ;;
+      *)
+        say "Skipping legacy Jellyfin. You can install it later with: bash ~/bin/setup-legacy-jellyfin.sh"
+        ;;
+    esac
+  fi
+fi
+
+chmod 700 "$START_SCRIPT" "$BOOT_SCRIPT" "$HOME/bin/start-legacy-jellyfin.sh" "$HOME/bin/setup-legacy-jellyfin.sh"
 chmod 755 "$PREFIX/bin/dl" "$PREFIX/bin/media-status"
 
 # Start services whenever a Termux shell opens. Avoid duplicate hook lines.
