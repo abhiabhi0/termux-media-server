@@ -41,13 +41,13 @@ say "Requesting Android shared-storage permission"
 termux-setup-storage || true
 mkdir -p "$HOME/bin" "$HOME/.termux/boot" "$HOME/.config/termux-media-server" "$FB_DIR" "$LOG_DIR" "$PREFIX/bin"
 
-# During a one-command install, only the installer itself is local. Fetch the
-# companion scripts from this public repository without requiring GitHub login.
+# Use repository files when running from a Git clone; otherwise fetch the
+# current companion scripts. A single-file one-command install works without login.
 install_repo_file() {
   local repo_path="$1"
   local destination="$2"
   local mode="${3:-755}"
-  if [[ -f "$SCRIPT_DIR/$repo_path" ]]; then
+  if [[ -e "$SCRIPT_DIR/.git" && -f "$SCRIPT_DIR/$repo_path" ]]; then
     install -m "$mode" "$SCRIPT_DIR/$repo_path" "$destination"
   else
     curl -fsSL "$RAW_BASE/$repo_path" -o "$destination"
