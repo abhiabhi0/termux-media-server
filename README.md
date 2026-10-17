@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://termux.dev/)
 [![Shell: Bash](https://img.shields.io/badge/Shell-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
+[![Shell syntax](https://github.com/abhiabhi0/termux-media-server/actions/workflows/shell-syntax.yml/badge.svg)](https://github.com/abhiabhi0/termux-media-server/actions/workflows/shell-syntax.yml)
 
 A self-hosted media and file server setup for Android using Termux. It brings together Jellyfin for media streaming, File Browser for web-based file management, SSH for remote administration, and aria2 for downloads. Connect from Windows or other devices over your private Tailscale network.
 
