@@ -104,6 +104,8 @@ If `proot-distro install` printed a Python `py3compile` traceback but `proot-dis
 
 Jellyfin 10.10.7 is an older release. Keep it on your local network or private Tailscale network, use a strong Jellyfin account password, and do not expose port 8096 directly to the public internet.
 
+For the complete step-by-step guide—including first login, adding the server by Tailscale IP, creating the Jellyfin account, adding **internal shared storage** as a media library, and troubleshooting the setup wizard—see [`docs/legacy-jellyfin-arm32.md`](docs/legacy-jellyfin-arm32.md). The canonical internal shared-storage path is `/storage/emulated/0`. In this PRoot setup, `/sdcard` is a compatibility alias for that same internal storage, not a removable SD card.
+
 ## Configure remote access
 
 ### 1. Install Tailscale
