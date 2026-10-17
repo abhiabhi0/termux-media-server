@@ -16,9 +16,11 @@ Thank you for your interest in improving Termux Media Server! Contributions, bug
 2. Create a branch for your change.
 3. Make and test your changes on a compatible Termux/Android setup when possible.
 4. Update the README or quick-command reference when behavior or usage changes.
-5. Check shell scripts for quoting, error handling, and safe reruns.
+5. Check shell scripts for quoting, error handling, and safe reruns. Run `bash -n script-name.sh` for each changed shell script.
 6. Commit your changes with a clear message.
 7. Open a pull request describing the change, how you tested it, and any limitations.
+
+The GitHub Actions workflow runs Bash syntax checks on the repository's shell scripts for pushes to `main` and pull requests.
 
 ## Reporting bugs
 
@@ -36,6 +38,7 @@ Remove credentials, private addresses, personal file paths, and other sensitive 
 - [ ] The change has a clear purpose and is scoped appropriately.
 - [ ] Documentation is updated where needed.
 - [ ] Commands and scripts have been tested, or testing limitations are stated.
+- [ ] Changed shell scripts pass `bash -n` syntax checks.
 - [ ] No secrets, personal data, or generated runtime databases/logs are included.
 
 ## License
