@@ -94,6 +94,25 @@ Legacy Jellyfin logs:
 Legacy server URL on your private Tailscale network:
   http://PHONE_TAILSCALE_IP_OR_NAME:8096
 
+First-time login:
+- The first-run wizard lets you create a Jellyfin username and password; there is no universal default login.
+- These credentials are separate from Termux SSH and File Browser credentials.
+- If server discovery finds nothing, choose Add Server and enter the base URL above.
+
+Add the phone's internal shared storage as a library folder:
+  /storage/emulated/0
+
+This is shared internal storage, including Download, Movies, DCIM and Pictures; it does not include private app data or Android system partitions.
+If the Jellyfin folder picker cannot browse /storage/emulated/0 in this PRoot setup, /sdcard is a compatibility alias to the same internal shared storage, not an external SD card. Confirm access with:
+  termux-setup-storage
+  ls -la ~/storage/shared
+  proot-distro login debian -- ls -la /sdcard
+
+Check the server's setup wizard state:
+  curl -sS http://127.0.0.1:8096/System/Info/Public
+
+If it says StartupWizardCompleted=false but Jellyfin still displays a sign-in page, do not guess a password or delete the database. See docs/legacy-jellyfin-arm32.md for read-only diagnostics.
+
 The script installs Jellyfin 10.10.7 server and web packages in Debian Bookworm armhf. It uses Termux FFmpeg bound into PRoot because the Debian Jellyfin FFmpeg binary may not run on Android/PRoot. This is an old release; do not expose it to the public internet.
 
 4. ACCESS SERVICES OVER TAILSCALE
