@@ -33,13 +33,18 @@ else
   echo "WARNING: OpenSSH is not installed; run pkg install openssh." >&2
 fi
 
-# Jellyfin is optional because its package is unavailable on some architectures.
+# Prefer the native Termux package. On unsupported 32-bit ARM devices, the
+# optional Debian/PRoot legacy installer sets a marker and installs a separate launcher.
 if command -v jellyfin >/dev/null 2>&1; then
   if ! pgrep -f '[j]ellyfin' >/dev/null 2>&1; then
     nohup jellyfin >> "$LOG_DIR/jellyfin.log" 2>&1 < /dev/null &
   fi
+elif [[ -f "$HOME/.config/termux-media-server/legacy-jellyfin-enabled" && -x "$HOME/bin/start-legacy-jellyfin.sh" ]]; then
+  if ! curl -fsS --max-time 3 http://127.0.0.1:8096/ -o /dev/null >/dev/null 2>&1; then
+    nohup "$HOME/bin/start-legacy-jellyfin.sh" >> "$LOG_DIR/jellyfin-launcher.log" 2>&1 < /dev/null &
+  fi
 else
-  echo "INFO: Jellyfin is not installed on this device; skipping it."
+  echo "INFO: Native Jellyfin is not installed and legacy ARM32 Jellyfin is not enabled."
 fi
 
 # File Browser requires its existing database; do not reset or recreate it here.
@@ -59,7 +64,17 @@ sleep 2
 
 echo "Media server startup check complete."
 if pgrep -x sshd >/dev/null 2>&1; then echo "SSH: RUNNING (port 8022 by default)"; else echo "SSH: NOT RUNNING"; fi
-if pgrep -f '[j]ellyfin' >/dev/null 2>&1; then echo "Jellyfin: RUNNING"; elif command -v jellyfin >/dev/null 2>&1; then echo "Jellyfin: INSTALLED, PROCESS NOT DETECTED"; else echo "Jellyfin: NOT INSTALLED"; fi
+if command -v jellyfin >/dev/null 2>&1; then
+  if pgrep -f '[j]ellyfin' >/dev/null 2>&1; then echo "Jellyfin: RUNNING (native Termux)"; else echo "Jellyfin: INSTALLED, PROCESS NOT DETECTED"; fi
+elif [[ -f "$HOME/.config/termux-media-server/legacy-jellyfin-enabled" ]]; then
+  code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:8096/ 2>/dev/null || true)"
+  case "$code" in
+    2??|3??) echo "Jellyfin: RUNNING (legacy Debian/PRoot, HTTP $code)" ;;
+    *) echo "Jellyfin: LEGACY ENABLED, NOT RESPONDING (see jellyfin-legacy.log)" ;;
+  esac
+else
+  echo "Jellyfin: NOT INSTALLED"
+fi
 if pgrep -f '[f]ilebrowser --address 0.0.0.0 --port 8080' >/dev/null 2>&1; then echo "File Browser: RUNNING"; else echo "File Browser: NOT RUNNING"; fi
 echo "Check full status with: media-status"
 echo "Logs: $LOG_DIR"
