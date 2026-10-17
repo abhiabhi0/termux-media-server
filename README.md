@@ -110,7 +110,21 @@ Replace the username with the value returned by this command in Termux:
 whoami
 ```
 
-Replace the hostname with your phone's Tailscale IP or MagicDNS hostname.
+If you have not set a Termux password for SSH yet, run this once in Termux and follow the prompts:
+
+```bash
+passwd
+```
+
+The installer asks about this during first setup and runs `passwd` only if you say you have not already configured an SSH password. The SSH server is started by `start-media.sh`; you normally do not need to start it manually. To check it and the other services, run:
+
+```bash
+media-status
+```
+
+If a service needs to be recovered, run `bash ~/bin/start-media.sh`.
+
+Replace the hostname with your phone's Tailscale IP or MagicDNS hostname. If the client is on the same local network and does not have Tailscale installed, use the phone's local Wi-Fi IP instead.
 
 Once connected, commands run on the Android phone, not on Windows.
 
