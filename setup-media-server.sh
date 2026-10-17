@@ -164,7 +164,7 @@ Log directory:         $LOG_DIR
 ONE-TIME FINAL STEPS
 1. If you want startup after a reboot, install Termux:Boot from the same trusted source as Termux and open Termux:Boot once.
    A boot hook has already been installed at: $BOOT_SCRIPT
-2. In Android Settings, set Termux battery usage to Unrestricted / Don't optimize where available.
+2. In Android Settings, set Termux and Termux:Boot battery usage to Unrestricted / Don't optimize where available.
 3. Set up Tailscale separately if you need remote access from outside your local network.
 4. Complete Jellyfin's first-run setup only if Jellyfin was installed and is available on this device.
 
