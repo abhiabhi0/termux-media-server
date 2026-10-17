@@ -13,7 +13,7 @@ Or edit/view it with:
 Start SSH, Jellyfin (if installed), and File Browser (if configured):
   bash ~/bin/start-media.sh
 
-This is normally handled automatically when a Termux shell opens. For startup after Android reboot, install and open the Termux:Boot Android app once; see the README. Also set Termux battery usage to Unrestricted where available.
+This is normally handled automatically when a Termux shell opens. For startup after Android reboot, install and open the Termux:Boot Android app once; see the README. Also set Termux and Termux:Boot battery usage to Unrestricted where available.
 
 Check all service processes and local web endpoints in one command:
   media-status
@@ -118,7 +118,7 @@ Check available storage:
 NOTES
 -----
 
-- Android may stop background services/downloads to save battery. Set Termux battery usage to Unrestricted where available.
+- Android may stop background services/downloads to save battery. Set Termux and Termux:Boot battery usage to Unrestricted where available.
 - The startup script and boot hook use termux-wake-lock if available, but Android can still terminate processes.
 - For startup after reboot, install and open the Termux:Boot app once from the same source as Termux.
 - Preferred service startup command: bash ~/bin/start-media.sh
