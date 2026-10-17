@@ -47,9 +47,20 @@ else
   chmod 755 "$PREFIX/bin/dl"
 fi
 
-say "Installing Jellyfin"
-if ! pkg install -y jellyfin-server jellyfin-ffmpeg; then
-  die "Jellyfin packages were not available for this Termux installation/repository. See README: Jellyfin support varies by architecture and Termux repository."
+say "Installing Jellyfin (optional)"
+TERMUX_ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+JELLYFIN_STATUS="not installed"
+
+# The official Termux Jellyfin server package excludes 32-bit ARM.
+# Keep installing the other services when Jellyfin is unavailable.
+if [[ "$TERMUX_ARCH" == "arm" || "$TERMUX_ARCH" == "armv7" || "$TERMUX_ARCH" == "armv7l" ]]; then
+  warn "Jellyfin is not available for 32-bit ARM in the official Termux package. Continuing with File Browser, SSH, and aria2."
+  JELLYFIN_STATUS="skipped (32-bit ARM not supported by package)"
+elif pkg install -y jellyfin-server jellyfin-ffmpeg; then
+  JELLYFIN_STATUS="installed"
+else
+  warn "Jellyfin packages could not be found or installed for architecture '$TERMUX_ARCH'. Continuing with the other services. See the README troubleshooting section to diagnose repository/package availability."
+  JELLYFIN_STATUS="unavailable for this Termux setup"
 fi
 
 say "Installing File Browser"
@@ -112,7 +123,7 @@ if ! pgrep -x sshd >/dev/null 2>&1; then
   sshd
 fi
 
-if ! pgrep -x jellyfin >/dev/null 2>&1; then
+if command -v jellyfin >/dev/null 2>&1 && ! pgrep -x jellyfin >/dev/null 2>&1; then
   nohup jellyfin >> "$LOG_DIR/jellyfin.log" 2>&1 < /dev/null &
 fi
 
@@ -143,7 +154,8 @@ SETUP COMPLETE
 Termux username:       $(id -un)
 Shared storage:        $HOME/storage/shared
 Download folder:       $HOME/storage/shared/Download
-Jellyfin:              http://127.0.0.1:8096
+Jellyfin status:       $JELLYFIN_STATUS
+Jellyfin URL (if installed): http://127.0.0.1:8096
 File Browser:          http://127.0.0.1:8080
 SSH port:              8022
 aria2:                 $(command -v aria2c || echo unavailable)
