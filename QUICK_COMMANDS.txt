@@ -75,24 +75,6 @@ List downloaded files:
   ls -lh ~/storage/shared/Download
 
 
-4. ACCESS SERVICES OVER TAILSCALE
-----------------------------------
-
-Replace PHONE_TAILSCALE_IP_OR_NAME with this phone's current Tailscale IP or MagicDNS name.
-
-Jellyfin:
-  http://PHONE_TAILSCALE_IP_OR_NAME:8096
-
-File Browser:
-  http://PHONE_TAILSCALE_IP_OR_NAME:8080
-
-SSH from Windows PowerShell:
-  ssh -p 8022 YOUR_TERMUX_USERNAME@PHONE_TAILSCALE_IP_OR_NAME
-
-Find the Termux username:
-  whoami
-
-
 3A. LEGACY JELLYFIN ON 32-BIT ARM
 --------------------------------
 
@@ -113,6 +95,24 @@ Legacy server URL on your private Tailscale network:
   http://PHONE_TAILSCALE_IP_OR_NAME:8096
 
 The script installs Jellyfin 10.10.7 server and web packages in Debian Bookworm armhf. It uses Termux FFmpeg bound into PRoot because the Debian Jellyfin FFmpeg binary may not run on Android/PRoot. This is an old release; do not expose it to the public internet.
+
+4. ACCESS SERVICES OVER TAILSCALE
+----------------------------------
+
+Replace PHONE_TAILSCALE_IP_OR_NAME with this phone's current Tailscale IP or MagicDNS name.
+
+Jellyfin:
+  http://PHONE_TAILSCALE_IP_OR_NAME:8096
+
+File Browser:
+  http://PHONE_TAILSCALE_IP_OR_NAME:8080
+
+SSH from Windows PowerShell:
+  ssh -p 8022 YOUR_TERMUX_USERNAME@PHONE_TAILSCALE_IP_OR_NAME
+
+Find the Termux username:
+  whoami
+
 
 5. LOGS AND STORAGE
 -------------------
