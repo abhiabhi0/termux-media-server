@@ -59,7 +59,7 @@ The setup script prepares the boot hook, but Android does not let a shell script
 
 1. Install the [Termux:Boot app](https://github.com/termux/termux-boot) from the **same source/signing channel** as your Termux app.
 2. Open Termux:Boot once after installing it.
-3. Set Termux battery usage to **Unrestricted** or **Don't optimize** in Android settings, where available.
+3. Set battery usage for Termux and Termux:Boot to **Unrestricted** or **Don't optimize** in Android settings, where available.
 
 After that, Termux:Boot runs the prepared hook after Android reboots. It waits briefly for the phone to initialize, then starts the services. The regular `.bashrc` hook also starts services when you open a Termux shell. Android can still terminate background processes, so this improves reliability but does not guarantee that services run forever.
 
@@ -252,7 +252,7 @@ For better reliability:
 
 These steps improve reliability but do not guarantee that Android will keep every process running indefinitely.
 
-The setup script installs a boot hook in `~/.termux/boot/00-start-media-server`. To enable it, install and open the Termux:Boot companion app once (from the same source/signing channel as Termux). Set Termux battery use to Unrestricted where available. The hook starts services after reboot, while the `.bashrc` hook starts them when a Termux shell opens. Android can still kill background apps, so no setup can guarantee that services run forever.
+The setup script installs a boot hook in `~/.termux/boot/00-start-media-server`. To enable it, install and open the Termux:Boot companion app once (from the same source/signing channel as Termux). Set battery use for Termux and Termux:Boot to Unrestricted where available. The hook starts services after reboot, while the `.bashrc` hook starts them when a Termux shell opens. Android can still kill background apps, so no setup can guarantee that services run forever.
 
 ## Security and privacy
 
