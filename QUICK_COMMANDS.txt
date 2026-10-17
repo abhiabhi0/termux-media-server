@@ -10,7 +10,7 @@ Or edit/view it with:
 1. START / RECOVER SERVICES
 ---------------------------
 
-Start SSH, Jellyfin (if installed), and File Browser (if configured):
+Start SSH, native or legacy Jellyfin (if configured), and File Browser (if configured):
   bash ~/bin/start-media.sh
 
 This is normally handled automatically when a Termux shell opens. For startup after Android reboot, install and open the Termux:Boot Android app once; see the README. Also set Termux and Termux:Boot battery usage to Unrestricted where available.
@@ -41,7 +41,7 @@ Check local web endpoints:
   curl -I http://127.0.0.1:8096
   curl -I http://127.0.0.1:8080
 
-Jellyfin may return "302 Found" and redirect to /web/; that is normal. A missing Jellyfin package is possible on unsupported Android architectures.
+Jellyfin may return "302 Found" and redirect to /web/; that is normal. On 32-bit ARM Termux, use the optional legacy Jellyfin 10.10.7 setup documented in README.md. It runs inside Debian/PRoot and uses Termux FFmpeg.
 
 
 3. SIMPLE DOWNLOADS
@@ -93,6 +93,27 @@ Find the Termux username:
   whoami
 
 
+3A. LEGACY JELLYFIN ON 32-BIT ARM
+--------------------------------
+
+Run the installer on a 32-bit ARM Termux phone:
+  curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-legacy-jellyfin.sh -o "$HOME/setup-legacy-jellyfin.sh" && bash "$HOME/setup-legacy-jellyfin.sh"
+
+Manually start the legacy server:
+  bash ~/bin/start-legacy-jellyfin.sh
+
+Check service health:
+  media-status
+
+Legacy Jellyfin logs:
+  tail -f ~/.local/share/media-server-logs/jellyfin-legacy.log
+  tail -f ~/.local/share/media-server-logs/jellyfin-launcher.log
+
+Legacy server URL on your private Tailscale network:
+  http://PHONE_TAILSCALE_IP_OR_NAME:8096
+
+The script installs Jellyfin 10.10.7 server and web packages in Debian Bookworm armhf. It uses Termux FFmpeg bound into PRoot because the Debian Jellyfin FFmpeg binary may not run on Android/PRoot. This is an old release; do not expose it to the public internet.
+
 5. LOGS AND STORAGE
 -------------------
 
@@ -122,6 +143,7 @@ NOTES
 - The startup script and boot hook use termux-wake-lock if available, but Android can still terminate processes.
 - For startup after reboot, install and open the Termux:Boot app once from the same source as Termux.
 - Preferred service startup command: bash ~/bin/start-media.sh
+- On legacy ARM32 devices, start-media.sh launches legacy Jellyfin in the background after its installer has been completed.
 - Run media-status to check services without memorizing separate commands.
 - Use "dl" for downloads instead of memorizing aria2c options.
 - Only download or share content you have permission to access.
