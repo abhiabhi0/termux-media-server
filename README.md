@@ -43,6 +43,18 @@ curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/
 
 The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it.
 
+### Updating an already-configured phone
+
+If the media server is already working and you only need the latest or newly added helper scripts, use the script-only updater below instead of rerunning the full setup installer:
+
+\`\`\`bash
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/update-scripts.sh -o "$HOME/update-scripts.sh" && bash "$HOME/update-scripts.sh"
+\`\`\`
+
+This updater refreshes the project-managed scripts (\`~/bin/start-media.sh\`, the Termux:Boot hook, \`media-status\`, the legacy Jellyfin helper scripts, and \`dl\`). It checks Bash syntax before installing each script and backs up any existing, different destination beside the original as \`.backup.TIMESTAMP\`. It does **not** run \`pkg upgrade\`, reinstall Jellyfin or File Browser, change their databases or passwords, edit \`~/.bashrc\`, or restart services. Afterward, run future updates with \`bash ~/bin/update-media-scripts.sh\`.
+
+The full \`setup-media-server.sh\` installer is intended for setup/reconciliation, not for script-only updates: it runs \`pkg update\` and \`pkg upgrade -y\` and refreshes managed scripts without backing up changed copies first. It preserves the File Browser database and does not reset Jellyfin's runtime data, but package versions may change. Prefer the updater above on an existing phone when you want only script changes.
+
 The installer configures the following in one run:
 
 - Required Termux packages, including OpenSSH, password tools, process checks, and aria2.
