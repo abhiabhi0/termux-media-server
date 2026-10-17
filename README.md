@@ -12,6 +12,7 @@ The project provides setup automation, standalone service startup, and a plain-t
 ## Features
 
 - **Jellyfin:** Stream your media through a web browser or compatible client.
+- **Legacy Jellyfin for 32-bit ARM:** Optionally run Jellyfin 10.10.7 inside Debian/PRoot when native Termux packages are unavailable.
 - **File Browser:** Browse, upload, download, and manage files through a web interface.
 - **SSH:** Remotely access the phone's Termux shell from Windows.
 - **aria2:** Download files using HTTP/HTTPS URLs, magnet links, and `.torrent` files.
@@ -67,7 +68,41 @@ Use `media-status` at any time to check SSH, Jellyfin, File Browser, active aria
 
 Tailscale is separate and is not installed or signed in by this script. Install it on the phone and client devices when you need private remote access.
 
-**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. The official Termux Jellyfin server package excludes 32-bit ARM. If Jellyfin is unavailable, the installer warns and continues setting up the other services instead of stopping the entire installation.
+**Compatibility note:** The official Termux Jellyfin server package is unavailable for 32-bit ARM. On that architecture, the main installer offers an optional legacy setup using Jellyfin 10.10.7 inside Debian Bookworm (`armhf`) under PRoot. This older release is a compatibility workaround, not the recommended route for supported 64-bit devices. It consumes additional storage and should only be accessed on your local network or through Tailscale; do not expose it directly to the public internet.
+
+### Legacy Jellyfin for 32-bit ARM Termux
+
+Use this route when Termux reports `arm` from `dpkg --print-architecture` and the native Jellyfin package is unavailable. The setup targets Debian Bookworm `armhf` and Jellyfin `10.10.7+deb12`.
+
+For a fresh installation, the main installer offers this as an opt-in step on 32-bit ARM devices. To add it to an existing Termux Media Server installation, run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-legacy-jellyfin.sh -o "$HOME/setup-legacy-jellyfin.sh" && bash "$HOME/setup-legacy-jellyfin.sh"
+```
+
+The script:
+
+1. Installs `proot-distro` and Termux FFmpeg.
+2. Creates a Debian Bookworm `armhf` container if one is not already installed. It will not replace a container that reports a different architecture.
+3. Configures the official Jellyfin APT repository and installs Jellyfin server and web interface version 10.10.7.
+4. Uses Termux's FFmpeg from inside PRoot and explicitly points Jellyfin to `/usr/share/jellyfin/web`. The packaged Debian FFmpeg may fail to load on Android/PRoot because of executable-stack restrictions.
+5. Installs `~/bin/start-legacy-jellyfin.sh`, enables the legacy server marker, refreshes the managed service/status/boot scripts, and starts Jellyfin in the background.
+
+The existing `~/.bashrc` hook and Termux:Boot hook call `start-media.sh`; once legacy Jellyfin is enabled, that script launches it in the background when a Termux shell opens and after a reboot via Termux:Boot.
+
+Useful commands:
+
+```bash
+bash ~/bin/start-legacy-jellyfin.sh
+bash ~/bin/start-media.sh
+media-status
+tail -f ~/.local/share/media-server-logs/jellyfin-legacy.log
+tail -f ~/.local/share/media-server-logs/jellyfin-launcher.log
+```
+
+If `proot-distro install` printed a Python `py3compile` traceback but `proot-distro list` works afterward, check the command's actual result instead of assuming the container installation failed. The expected architecture check is `proot-distro login debian -- dpkg --print-architecture`, which should print `armhf`.
+
+Jellyfin 10.10.7 is an older release. Keep it on your local network or private Tailscale network, use a strong Jellyfin account password, and do not expose port 8096 directly to the public internet.
 
 ## Configure remote access
 
@@ -218,6 +253,8 @@ pgrep -af filebrowser
 pgrep -af sshd
 ```
 
+For legacy ARM32 Jellyfin, use `media-status` and the `jellyfin-legacy.log` log, since the server runs inside PRoot rather than as a native Termux package.
+
 Check Jellyfin locally:
 
 ```bash
@@ -234,6 +271,8 @@ Follow the service logs:
 
 ```bash
 tail -f ~/.local/share/media-server-logs/jellyfin.log
+tail -f ~/.local/share/media-server-logs/jellyfin-legacy.log
+tail -f ~/.local/share/media-server-logs/jellyfin-launcher.log
 tail -f ~/.local/share/media-server-logs/filebrowser.log
 ```
 
@@ -281,10 +320,10 @@ The setup script installs a boot hook in `~/.termux/boot/00-start-media-server`.
 
 ### Jellyfin or File Browser does not open
 
-- Check whether the relevant process is running.
+- Check whether the relevant endpoint responds with `media-status`.
 - Start services with `bash ~/bin/start-media.sh`.
-- Verify the port and phone's current Tailscale address.
-- Review the service logs for errors.
+- For legacy Jellyfin, check `tail -n 80 ~/.local/share/media-server-logs/jellyfin-legacy.log` and `tail -n 80 ~/.local/share/media-server-logs/jellyfin-launcher.log`.
+- Verify the port and phone's current Tailscale address. The legacy server uses port `8096`.
 
 ### aria2 does not download
 
