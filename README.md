@@ -39,13 +39,34 @@ Jellyfin package availability and performance depend on your Android architectur
 curl -fsSL https://raw.githubusercontent.com/abhiabhi0/termux-media-server/main/setup-media-server.sh -o "$HOME/setup-media-server.sh" && bash "$HOME/setup-media-server.sh"
 ```
 
-The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it. It installs the required utilities, requests Android shared-storage permission, installs the `dl` download shortcut, and configures File Browser and SSH. It also attempts to install Jellyfin where the package is available.
+The repository is public, so you do **not** need to sign in to GitHub or create a GitHub account. The command downloads the installer into your Termux home directory and runs it.
 
-During setup, Android may show a storage-permission prompt. On a first-time File Browser setup, you will be prompted to create an administrator password. Keep it private.
+The installer configures the following in one run:
 
-The setup script can also be downloaded and reviewed before running it. It does not install or sign in to Tailscale; install the Tailscale app separately on the phone and other devices that need private remote access.
+- Required Termux packages, including OpenSSH, password tools, process checks, and aria2.
+- File Browser and its admin account (only asks for a password when creating a new database; existing account/database are preserved).
+- The `dl` download shortcut and `media-status` service checker.
+- The managed service script at `~/bin/start-media.sh`.
+- A duplicate-checked `.bashrc` hook that starts services when a Termux shell opens.
+- A Termux:Boot hook at `~/.termux/boot/00-start-media-server` for startup after a device reboot.
 
-**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. The current official Termux Jellyfin server package excludes 32-bit ARM. If Jellyfin is unavailable, the installer now displays a warning and continues setting up the other services instead of stopping the entire installation.
+During setup, Android may show a storage-permission prompt. The installer asks whether you have already set the Termux SSH password. Answer **yes** if you previously ran `passwd` and SSH login works; otherwise answer **no** to set it. This prompt is remembered so a rerun does not repeatedly ask. Keep your SSH and File Browser passwords private.
+
+### Enable automatic startup after reboot
+
+The setup script prepares the boot hook, but Android does not let a shell script silently install another Android app. To finish boot-time startup once:
+
+1. Install the [Termux:Boot app](https://github.com/termux/termux-boot) from the **same source/signing channel** as your Termux app.
+2. Open Termux:Boot once after installing it.
+3. Set Termux battery usage to **Unrestricted** or **Don't optimize** in Android settings, where available.
+
+After that, Termux:Boot runs the prepared hook after Android reboots. It waits briefly for the phone to initialize, then starts the services. The regular `.bashrc` hook also starts services when you open a Termux shell. Android can still terminate background processes, so this improves reliability but does not guarantee that services run forever.
+
+Use `media-status` at any time to check SSH, Jellyfin, File Browser, active aria2 downloads, and local web endpoints. Use `bash ~/bin/start-media.sh` to start/recover services manually if needed.
+
+Tailscale is separate and is not installed or signed in by this script. Install it on the phone and client devices when you need private remote access.
+
+**Compatibility note:** Jellyfin package availability depends on your Android architecture and configured Termux repositories. The official Termux Jellyfin server package excludes 32-bit ARM. If Jellyfin is unavailable, the installer warns and continues setting up the other services instead of stopping the entire installation.
 
 ## Configure remote access
 
@@ -145,10 +166,16 @@ pgrep -af aria2c
 
 ## Start and check services
 
-Start the configured services:
+Start or recover the configured services:
 
 ```bash
 bash ~/bin/start-media.sh
+```
+
+Check all services and local web endpoints in one command:
+
+```bash
+media-status
 ```
 
 The repository also includes the standalone [`start-media.sh`](start-media.sh) startup script. The setup installer creates a copy at `~/bin/start-media.sh`. If you need to install or refresh it manually, run this in Termux:
@@ -210,7 +237,7 @@ For better reliability:
 
 These steps improve reliability but do not guarantee that Android will keep every process running indefinitely.
 
-The setup script's `.bashrc` hook starts services when a Termux shell opens. It does not guarantee automatic startup immediately after an Android reboot. Termux:Boot can be configured separately if automatic startup is required.
+The setup script installs a boot hook in `~/.termux/boot/00-start-media-server`. To enable it, install and open the Termux:Boot companion app once (from the same source/signing channel as Termux). Set Termux battery use to Unrestricted where available. The hook starts services after reboot, while the `.bashrc` hook starts them when a Termux shell opens. Android can still kill background apps, so no setup can guarantee that services run forever.
 
 ## Security and privacy
 
